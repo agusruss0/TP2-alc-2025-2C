@@ -1,0 +1,16 @@
+Laplaciano L: cortes minimos
+Modularidad Q: grupos que estan mas conectados entre si que lo que esperariamos por azar
+
+Biseccion de redes:
+- Biseccionar recursivamente la red. Partir la red en 2
+- s vector de R^n, con s_i=1 si pertenece a grupo 1, s_i=-1 si es del grupo 2
+
+Corte minimo:
+- la minima cantidad de cortes que separan 2 grupos
+- minimo de 1/4 s*Ls
+- L = K-a
+
+Modularidad:
+- Q=1/2E s*Rs 
+- R = A -P
+- P = 1/2E diag(K)diag(K)*
