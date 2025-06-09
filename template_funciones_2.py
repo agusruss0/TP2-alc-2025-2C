@@ -48,42 +48,51 @@ def calcula_Q(R: np.ndarray, v: np.ndarray) -> float:
 
 
 def metpot1(
-    A: np.ndarray, tol: float = 1e-8, maxrep: int = np.inf
-) -> tuple[np.ndarray, float, bool]:
+    A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf
+) -> tuple[np.ndarray, float, bool, np.ndarray]:
     # Recibe una matriz A y calcula su autovalor de mayor módulo, con un error relativo menor a tol y-o haciendo como mucho maxrep repeticiones
-    v = ...  # Generamos un vector de partida aleatorio, entre -1 y 1
-    v = ...  # Lo normalizamos
-    v1 = ...  # Aplicamos la matriz una vez
-    v1 = ...  # normalizamos
-    l = ...  # Calculamos el autovector estimado
-    l1 = ...  # Y el estimado en el siguiente paso
+    eig_aprox = []
+    rows, cols = A.shape
+
+    v = np.random.random(cols)  # Generamos un vector de partida aleatorio, entre -1 y 1
+    v = v / np.linalg.norm(v, 2)  # Lo normalizamos
+    v1 = A @ v  # Aplicamos la matriz una vez
+    v1 = v1 / np.linalg.norm(v1, 2)  # normalizamos
+    eig_aprox.append(v1.copy())
+    l = (v.T @ A @ v) / (v.T @ v)  # Calculamos el autovector estimado
+    l1 = (v1.T @ A @ v1) / (v1.T @ v1)  # Y el estimado en el siguiente paso
     nrep = 0  # Contador
+
     while (
         np.abs(l1 - l) / np.abs(l) > tol and nrep < maxrep
     ):  # Si estamos por debajo de la tolerancia buscada
         v = v1  # actualizamos v y repetimos
         l = l1
-        v1 = ...  # Calculo nuevo v1
-        v1 = ...  # Normalizo
-        l1 = ...  # Calculo autovector
+        v1 = A @ v  # Calculo nuevo v1
+        v1 = v1 / np.linalg.norm(v1, 2)  # Normalizo
+        eig_aprox.append(v1.copy())
+        l1 = (v1.T @ A @ v1) / (v1.T @ v1)  # Calculo autovector
         nrep += 1  # Un pasito mas
+
     if not nrep < maxrep:
         print("MaxRep alcanzado")
-    l = ...  # Calculamos el autovalor
-    return v1, l, nrep < maxrep
+
+    l = (v1.T @ A @ v1) / (v1.T @ v1)  # Calculamos el autovalor
+    eig_aprox = np.vstack(eig_aprox)
+    return v1, l, nrep < maxrep, eig_aprox
 
 
-def deflaciona(A: np.ndarray, tol: float = 1e-8, maxrep: int = np.inf) -> np.ndarray:
+def deflaciona(A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf) -> np.ndarray:
     # Recibe la matriz A, una tolerancia para el método de la potencia, y un número máximo de repeticiones
     v1, l1, _ = metpot1(
         A, tol, maxrep
     )  # Buscamos primer autovector con método de la potencia
-    deflA = ...  # Sugerencia, usar la funcion outer de numpy
+    deflA = np.outer()  # Sugerencia, usar la funcion outer de numpy
     return deflA
 
 
 def metpot2(
-    A: np.ndarray, v1: np.ndarray, l1: float, tol: float = 1e-8, maxrep: int = np.inf
+    A: np.ndarray, v1: np.ndarray, l1: float, tol: float = 1e-8, maxrep: float = np.inf
 ) -> tuple[np.ndarray, float, bool]:
     # La funcion aplica el metodo de la potencia para buscar el segundo autovalor de A, suponiendo que sus autovectores son ortogonales
     # v1 y l1 son los primeors autovectores y autovalores de A}
