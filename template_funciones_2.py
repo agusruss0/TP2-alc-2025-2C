@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # sólo para activar el proyector 3D
 
 # Matriz A de ejemplo
 # A_ejemplo = np.array([
@@ -42,44 +44,52 @@ def calcula_lambda(L: np.ndarray, v: np.ndarray) -> np.ndarray:
     return lambdon
 
 
-def calcula_Q(R: np.ndarray, v: np.ndarray) -> float:
+def calcula_Q(R: np.ndarray, v: np.ndarray) -> np.ndarray:
     # La funcion recibe R y s y retorna la modularidad (a menos de un factor 2E)
     return Q
 
 
 def metpot1(
-    A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf
-) -> tuple[np.ndarray, float, bool, np.ndarray]:
+    A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf, plot: bool = False
+) -> tuple[np.ndarray, float, bool]:
     # Recibe una matriz A y calcula su autovalor de mayor módulo, con un error relativo menor a tol y-o haciendo como mucho maxrep repeticiones
-    eig_aprox = []
+    avec_aprox = []
     rows, cols = A.shape
 
-    v = np.random.random(cols)  # Generamos un vector de partida aleatorio, entre -1 y 1
-    v = v / np.linalg.norm(v, 2)  # Lo normalizamos
-    v1 = A @ v  # Aplicamos la matriz una vez
-    v1 = v1 / np.linalg.norm(v1, 2)  # normalizamos
-    eig_aprox.append(v1.copy())
-    l = (v.T @ A @ v) / (v.T @ v)  # Calculamos el autovector estimado
-    l1 = (v1.T @ A @ v1) / (v1.T @ v1)  # Y el estimado en el siguiente paso
+    vec = np.random.random(
+        cols
+    )  # Generamos un vector de partida aleatorio, entre -1 y 1
+    vec = vec / np.linalg.norm(vec, 2)  # Lo normalizamos
+    avec1 = A @ vec  # Aplicamos la matriz una vez
+    avec1 = avec1 / np.linalg.norm(avec1, 2)  # normalizamos
+    avec_aprox.append(avec1.copy())
+    aval = (vec.T @ A @ vec) / (vec.T @ vec)  # Calculamos el autovalor estimado
+    aval1 = (avec1.T @ A @ avec1) / (
+        avec1.T @ avec1
+    )  # Y el estimado en el siguiente paso
     nrep = 0  # Contador
 
     while (
-        np.abs(l1 - l) / np.abs(l) > tol and nrep < maxrep
+        np.abs(aval1 - aval) / np.abs(aval) > tol and nrep < maxrep
     ):  # Si estamos por debajo de la tolerancia buscada
-        v = v1  # actualizamos v y repetimos
-        l = l1
-        v1 = A @ v  # Calculo nuevo v1
-        v1 = v1 / np.linalg.norm(v1, 2)  # Normalizo
-        eig_aprox.append(v1.copy())
-        l1 = (v1.T @ A @ v1) / (v1.T @ v1)  # Calculo autovector
+        vec = avec1  # actualizamos v y repetimos
+        aval = aval1
+        avec1 = A @ vec  # Calculo nuevo v1
+        avec1 = avec1 / np.linalg.norm(avec1, 2)  # Normalizo
+        avec_aprox.append(avec1.copy())
+        aval1 = (avec1.T @ A @ avec1) / (avec1.T @ avec1)  # Calculo autovector
         nrep += 1  # Un pasito mas
 
     if not nrep < maxrep:
         print("MaxRep alcanzado")
 
-    l = (v1.T @ A @ v1) / (v1.T @ v1)  # Calculamos el autovalor
-    eig_aprox = np.vstack(eig_aprox)
-    return v1, l, nrep < maxrep, eig_aprox
+    aval = (avec1.T @ A @ avec1) / (avec1.T @ avec1)  # Calculamos el autovalor
+    avec_aprox = np.vstack(avec_aprox)
+
+    if plot:
+        plot_avec_aprox(avec_aprox)
+
+    return avec1, aval, nrep < maxrep
 
 
 def deflaciona(A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf) -> np.ndarray:
@@ -87,29 +97,36 @@ def deflaciona(A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf) -> np.n
     v1, l1, _ = metpot1(
         A, tol, maxrep
     )  # Buscamos primer autovector con método de la potencia
-    deflA = np.outer()  # Sugerencia, usar la funcion outer de numpy
+    deflA = (
+        A.copy() - l1 * v1 @ v1.T / v1.T @ v1
+    )  # Sugerencia, usar la funcion outer de numpy
     return deflA
 
 
 def metpot2(
     A: np.ndarray, v1: np.ndarray, l1: float, tol: float = 1e-8, maxrep: float = np.inf
-) -> tuple[np.ndarray, float, bool]:
+) -> tuple[np.ndarray, float, bool, np.ndarray]:
     # La funcion aplica el metodo de la potencia para buscar el segundo autovalor de A, suponiendo que sus autovectores son ortogonales
     # v1 y l1 son los primeors autovectores y autovalores de A}
     # Have fun!
+    deflA = deflaciona(A)
     return metpot1(deflA, tol, maxrep)
 
 
 def metpotI(
-    A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: int = np.inf
-) -> tuple[np.ndarray, float, bool]:
+    A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
+) -> tuple[np.ndarray, float, bool, np.ndarray]:
     # Retorna el primer autovalor de la inversa de A + mu * I, junto a su autovector y si el método convergió.
-    return metpot1(..., tol=tol, maxrep=maxrep)
+    row, cols = A.shape
+
+    A_mu = A - mu * np.eye(row, cols)
+    A_mu_inv = np.linalg.inv(A_mu)
+    return metpot1(A_mu_inv, tol=tol, maxrep=maxrep)
 
 
 def metpotI2(
-    A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: int = np.inf
-) -> tuple[np.ndarray, float, bool]:
+    A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
+) -> tuple[np.ndarray, float, bool, np.ndarray]:
     # Recibe la matriz A, y un valor mu y retorna el segundo autovalor y autovector de la matriz A,
     # suponiendo que sus autovalores son positivos excepto por el menor que es igual a 0
     # Retorna el segundo autovector, su autovalor, y si el metodo llegó a converger.
@@ -199,3 +216,34 @@ def modularidad_iterativo(
             else:
                 # Sino, repetimos para los subniveles
                 return ...
+
+
+def plot_avec_aprox(vecs: np.ndarray) -> None:
+    plt.figure(figsize=(8, 4))
+    plt.plot(np.arange(len(vecs)), vecs[:, 0], label="Componente x")
+
+    plt.plot(np.arange(len(vecs)), vecs[:, 1], label="Componente y")
+
+    plt.plot(np.arange(len(vecs)), vecs[:, 2], label="Componente z")
+
+    plt.xlabel("Iteración")
+    plt.ylabel("Valor de la componente")
+    plt.title("Convergencia de cada componente del autovector")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    fig = plt.figure(figsize=(6, 6))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot(vecs[:, 0], vecs[:, 1], vecs[:, 2], marker="o", linewidth=1)
+
+    ax.scatter(*vecs[-1], c="red", s=60, label="Autovector convergido")
+
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+    ax.set_title("Trayectoria de las aproximaciones en R³")
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
