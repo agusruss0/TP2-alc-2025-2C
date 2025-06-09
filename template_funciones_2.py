@@ -124,21 +124,23 @@ def metpotI(
     return metpot1(A_mu_inv, tol=tol, maxrep=maxrep)
 
 
+# TODO: Consultar. 
 def metpotI2(
     A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
 ) -> tuple[np.ndarray, float, bool, np.ndarray]:
     # Recibe la matriz A, y un valor mu y retorna el segundo autovalor y autovector de la matriz A,
     # suponiendo que sus autovalores son positivos excepto por el menor que es igual a 0
     # Retorna el segundo autovector, su autovalor, y si el metodo llegó a converger.
-    X = ...  # Calculamos la matriz A shifteada en mu
-    iX = ...  # La invertimos
-    defliX = ...  # La deflacionamos
-    v, l, _ = ...  # Buscamos su segundo autovector
+    X = A + mu * np.eye(A.shape[0])  # Calculamos la matriz A shifteada en mu
+    iX = np.linalg.inv(X)  # La invertimos
+    defliX = deflaciona(iX,tol,maxrep)  # La deflacionamos
+    v, l, _ = metpotI(defliX,mu,tol,maxrep)  # Buscamos su segundo autovector
     l = 1 / l  # Reobtenemos el autovalor correcto
     l -= mu
     return v, l, _
 
 
+#TODO: consultar.
 def laplaciano_iterativo(
     A: np.ndarray, niveles: int, nombres_s: list[str] = None
 ) -> list[list[str]]:
@@ -154,11 +156,11 @@ def laplaciano_iterativo(
     ):  # Si llegamos al último paso, retornamos los nombres en una lista
         return [nombres_s]
     else:  # Sino:
-        L = calcula_L(A)  # Recalculamos el L
-        v, l, _ = ...  # Encontramos el segundo autovector de L
+        L = calcula_L(A)  # Recalculamos el L 
+        v, l, _ = metpotI2(L,1,maxrep=1000)#...  # Encontramos el segundo autovector de L
         # Recortamos A en dos partes, la que está asociada a el signo positivo de v y la que está asociada al negativo
-        Ap = ...  # Asociado al signo positivo
-        Am = ...  # Asociado al signo negativo
+        Ap = np.where(v>=0)  # Asociado al signo positivo
+        Am = np.where(v<0)  # Asociado al signo negativo
 
         return laplaciano_iterativo(
             Ap, niveles - 1, nombres_s=[ni for ni, vi in zip(nombres_s, v) if vi > 0]
