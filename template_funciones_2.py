@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # sólo para activar el proyector 3D
 
+
+from template_funciones import calcular_inversa, calculaLU
 # Matriz A de ejemplo
 # A_ejemplo = np.array([
 #    [0, 1, 1, 1, 0, 0, 0, 0],
@@ -37,10 +39,10 @@ def calcula_R(A: np.ndarray) -> np.ndarray:
     return R
 
 
-def calcula_lambda(L: np.ndarray, v: np.ndarray) -> np.ndarray:
+def calcula_lambda(L: np.ndarray, v: np.ndarray) -> float:
     # Recibe L y v y retorna el corte asociado
     # Have fun!
-    lambdon = np.multiply(1 / 4, v.T @ L @ v)
+    lambdon: float = (1 / 4) * v.T @ L @ v
     return lambdon
 
 
@@ -56,8 +58,8 @@ def metpot1(
     avec_aprox = []
     rows, cols = A.shape
 
-    vec = np.random.random(
-        cols
+    vec = np.random.uniform(
+        -1, 1, size=cols
     )  # Generamos un vector de partida aleatorio, entre -1 y 1
     vec = vec / np.linalg.norm(vec, 2)  # Lo normalizamos
     avec1 = A @ vec  # Aplicamos la matriz una vez
@@ -83,50 +85,46 @@ def metpot1(
     if not nrep < maxrep:
         print("MaxRep alcanzado")
 
-    aval = (avec1.T @ A @ avec1) / (avec1.T @ avec1)  # Calculamos el autovalor
-    avec_aprox = np.vstack(avec_aprox)
+    # Calculamos el autovalor
+    avecs_aprox = np.vstack(avec_aprox)
 
     if plot:
-        plot_avec_aprox(avec_aprox)
+        plot_avec_aprox(avecs_aprox)
 
-    return avec1, aval, nrep < maxrep
+    return avec1, aval1, nrep < maxrep
 
 
-def deflaciona(A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf) -> np.ndarray:
-    # Recibe la matriz A, una tolerancia para el método de la potencia, y un número máximo de repeticiones
-    v1, l1, _ = metpot1(
-        A, tol, maxrep
-    )  # Buscamos primer autovector con método de la potencia
-    deflA = (
-        A.copy() - l1 * v1 @ v1.T / v1.T @ v1
-    )  # Sugerencia, usar la funcion outer de numpy
+def deflaciona(A: np.ndarray, avec: np.ndarray, aval: float) -> np.ndarray:
+    # Recibe la matriz A, el autovector a remover y su autovalor asociado
+    deflA = A.copy() - aval / np.linalg.norm(avec, 2) * np.outer(avec, avec)
+    # Sugerencia, usar la funcion outer de numpy
     return deflA
 
 
 def metpot2(
     A: np.ndarray, v1: np.ndarray, l1: float, tol: float = 1e-8, maxrep: float = np.inf
-) -> tuple[np.ndarray, float, bool, np.ndarray]:
+) -> tuple[np.ndarray, float, bool]:
     # La funcion aplica el metodo de la potencia para buscar el segundo autovalor de A, suponiendo que sus autovectores son ortogonales
     # v1 y l1 son los primeors autovectores y autovalores de A}
     # Have fun!
-    deflA = deflaciona(A)
+    deflA = deflaciona(A, v1, l1)
     return metpot1(deflA, tol, maxrep)
 
 
 def metpotI(
     A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
-) -> tuple[np.ndarray, float, bool, np.ndarray]:
+) -> tuple[np.ndarray, float, bool]:
     # Retorna el primer autovalor de la inversa de A + mu * I, junto a su autovector y si el método convergió.
     row, cols = A.shape
 
     A_mu = A - mu * np.eye(row, cols)
-    A_mu_inv = np.linalg.inv(A_mu)
+    A_mu_inv = calcular_inversa(*calculaLU(A_mu))
     return metpot1(A_mu_inv, tol=tol, maxrep=maxrep)
 
 
 def metpotI2(
     A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
-) -> tuple[np.ndarray, float, bool, np.ndarray]:
+) -> tuple[np.ndarray, float, bool]:
     # Recibe la matriz A, y un valor mu y retorna el segundo autovalor y autovector de la matriz A,
     # suponiendo que sus autovalores son positivos excepto por el menor que es igual a 0
     # Retorna el segundo autovector, su autovalor, y si el metodo llegó a converger.
