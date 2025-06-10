@@ -42,7 +42,11 @@ def calcula_R(A: np.ndarray) -> np.ndarray:
 def calcula_lambda(L: np.ndarray, v: np.ndarray) -> float:
     # Recibe L y v y retorna el corte asociado
     # Have fun!
-    lambdon: float = (1 / 4) * v.T @ L @ v
+    s = []
+    
+    for i in range(len(v)):
+        s[i] = -1 if v[i] < 0 else 1
+    lambdon: float = (1 / 4) * s.T @ L @ s
     return lambdon
 
 
