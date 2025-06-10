@@ -30,10 +30,20 @@ def calcula_L(A: np.ndarray) -> np.ndarray:
     L = K - A  # Calculamos el Laplaciano
     return L
 
-
+#TODO : consultar.
 def calcula_R(A: np.ndarray) -> np.ndarray:
     # La funcion recibe la matriz de adyacencia A y calcula la matriz de modularidad
     # Have fun!!
+    # Calculamos el Laplaciano
+    K = calcula_L(A) - A 
+    suma_total = np.sum(A) # suma_total = 2*E
+    rows, cols = A.shape
+    P= np.zeros((rows, cols))  # Construyo una matriz de 0s con las dimensiones de A    
+    for i in range(rows):
+        for j in range(cols):
+            if i != j:
+                P[i, j] = (K[i, i] * K[j, j]) / suma_total  # Probabilidad de que exista una arista entre i y j
+    R = A - P  # Calculamos la matriz de modularidad
     return R
 
 
@@ -46,6 +56,9 @@ def calcula_lambda(L: np.ndarray, v: np.ndarray) -> np.ndarray:
 
 def calcula_Q(R: np.ndarray, v: np.ndarray) -> np.ndarray:
     # La funcion recibe R y s y retorna la modularidad (a menos de un factor 2E)
+    
+    Q = v.T @ R @ v
+    #suma_total = (1 / (4 * E))
     return Q
 
 
