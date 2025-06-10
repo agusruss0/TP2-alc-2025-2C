@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # sólo para activar el proyector 3D
 
+from template_funciones import *
+
 # Matriz A de ejemplo
 # A_ejemplo = np.array([
 #    [0, 1, 1, 1, 0, 0, 0, 0],
@@ -30,12 +32,11 @@ def calcula_L(A: np.ndarray) -> np.ndarray:
     L = K - A  # Calculamos el Laplaciano
     return L
 
-#TODO : consultar.
 def calcula_R(A: np.ndarray) -> np.ndarray:
     # La funcion recibe la matriz de adyacencia A y calcula la matriz de modularidad
     # Have fun!!
     # Calculamos el Laplaciano
-    K = calcula_L(A) - A 
+    K = calcula_L(A) + A 
     suma_total = np.sum(A) # suma_total = 2*E
     rows, cols = A.shape
     P= np.zeros((rows, cols))  # Construyo una matriz de 0s con las dimensiones de A    
@@ -50,14 +51,15 @@ def calcula_R(A: np.ndarray) -> np.ndarray:
 def calcula_lambda(L: np.ndarray, v: np.ndarray) -> np.ndarray:
     # Recibe L y v y retorna el corte asociado
     # Have fun!
-    lambdon = np.multiply(1 / 4, v.T @ L @ v)
+    s = np.sign(v)
+    lambdon = np.multiply(1 / 4, s.T @ L @ s)
     return lambdon
 
 
 def calcula_Q(R: np.ndarray, v: np.ndarray) -> np.ndarray:
     # La funcion recibe R y s y retorna la modularidad (a menos de un factor 2E)
-    
-    Q = v.T @ R @ v
+    s = np.sign(v)
+    Q = s.T @ R @ s
     #suma_total = (1 / (4 * E))
     return Q
 
@@ -133,11 +135,11 @@ def metpotI(
     row, cols = A.shape
 
     A_mu = A - mu * np.eye(row, cols)
-    A_mu_inv = np.linalg.inv(A_mu)
+    L,U = calculaLU(A_mu)
+    A_mu_inv = calcular_inversa(L,U)
+    
     return metpot1(A_mu_inv, tol=tol, maxrep=maxrep)
 
-
-# TODO: Consultar. 
 def metpotI2(
     A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
 ) -> tuple[np.ndarray, float, bool, np.ndarray]:
@@ -145,7 +147,8 @@ def metpotI2(
     # suponiendo que sus autovalores son positivos excepto por el menor que es igual a 0
     # Retorna el segundo autovector, su autovalor, y si el metodo llegó a converger.
     X = A + mu * np.eye(A.shape[0])  # Calculamos la matriz A shifteada en mu
-    iX = np.linalg.inv(X)  # La invertimos
+    L,U = calculaLU(X)
+    iX = calcular_inversa(L,U) # La invertimos
     defliX = deflaciona(iX,tol,maxrep)  # La deflacionamos
     v, l, _ = metpotI(defliX,mu,tol,maxrep)  # Buscamos su segundo autovector
     l = 1 / l  # Reobtenemos el autovalor correcto
