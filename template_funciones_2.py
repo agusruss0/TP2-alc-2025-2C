@@ -63,7 +63,10 @@ def calcula_Q(R: np.ndarray, v: np.ndarray) -> np.ndarray:
     #suma_total = (1 / (4 * E))
     return Q
 
-
+def calcula_2E(A: np.ndarray) -> float:
+    return np.sum(A)
+    
+    
 def metpot1(
     A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf, plot: bool = False
 ) -> tuple[np.ndarray, float, bool]:
@@ -119,7 +122,7 @@ def metpot2(
 ) -> tuple[np.ndarray, float, bool]:
     # La funcion aplica el metodo de la potencia para buscar el segundo autovalor de A, suponiendo que sus autovectores son ortogonales
     # v1 y l1 son los primeors autovectores y autovalores de A}
-    # Have fun!
+    # Have fun
     deflA = deflaciona(A, v1, l1)
     return metpot1(deflA, tol, maxrep)
 
@@ -143,8 +146,9 @@ def metpotI2(
     X = A + mu * np.eye(A.shape[0])  # Calculamos la matriz A shifteada en mu
     L,U = calculaLU(X)
     iX = calcular_inversa(L,U) # La invertimos
-    defliX = deflaciona(iX,tol,maxrep)  # La deflacionamos
-    v, l, _ = metpotI(defliX,mu,tol,maxrep)  # Buscamos su segundo autovector
+    v1, l1, _ = metpot1(iX, tol, maxrep)
+    defliX = deflaciona(iX, v1, l1)  # La deflacionamos
+    v, l, _ = metpotI(defliX, mu, tol, maxrep)  # Buscamos su segundo autovector
     l = 1 / l  # Reobtenemos el autovalor correcto
     l -= mu
     return v, l, _
@@ -173,10 +177,9 @@ def laplaciano_iterativo(
         
         pos_i = [i for i in range(len(s)) if s[i]>= 0]
         neg_i = [i for i in range(len(s)) if s[i] < 0]
-        print(pos_i)
-        print(s)
-        Ap = A[pos_i][:,pos_i] # Asociado al signo positivo
-        Am = A[neg_i][:,neg_i]   # Asociado al signo negativo
+        
+        Ap = A[pos_i][:, pos_i] # Asociado al signo positivo
+        Am = A[neg_i][:, neg_i]   # Asociado al signo negativo
 
         return laplaciano_iterativo(
             Ap, niveles - 1, nombres_s=[ni for ni, vi in zip(nombres_s, v) if vi > 0]
