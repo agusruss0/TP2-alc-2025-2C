@@ -112,7 +112,8 @@ def metpot1(
 
 def deflaciona(A: np.ndarray, avec: np.ndarray, aval: float) -> np.ndarray:
     # Recibe la matriz A, el autovector a remover y su autovalor asociado
-    deflA = A.copy() - aval / np.linalg.norm(avec, 2) * np.outer(avec, avec)
+    avec = avec / np.linalg.norm(avec, 2) 
+    deflA = A - aval * np.outer(avec, avec)
     # Sugerencia, usar la funcion outer de numpy
     return deflA
 
@@ -133,9 +134,10 @@ def metpotI(
     # Retorna el primer autovalor de la inversa de A + mu * I, junto a su autovector y si el método convergió.
     row, cols = A.shape
 
-    A_mu = A - mu * np.eye(row, cols)
-    A_mu_inv = calcular_inversa(*calculaLU(A_mu))
-    return metpot1(A_mu_inv, tol=tol, maxrep=maxrep)
+    M = A + mu * np.eye(row, cols)
+    M_inv = calcular_inversa(*calculaLU(M))
+    
+    return metpot1(M_inv, tol=tol, maxrep=maxrep)
 
 def metpotI2(
     A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
@@ -143,12 +145,12 @@ def metpotI2(
     # Recibe la matriz A, y un valor mu y retorna el segundo autovalor y autovector de la matriz A,
     # suponiendo que sus autovalores son positivos excepto por el menor que es igual a 0
     # Retorna el segundo autovector, su autovalor, y si el metodo llegó a converger.
-    X = A + mu * np.eye(A.shape[0])  # Calculamos la matriz A shifteada en mu
-    L,U = calculaLU(X)
-    iX = calcular_inversa(L,U) # La invertimos
-    v1, l1, _ = metpot1(iX, tol, maxrep)
-    defliX = deflaciona(iX, v1, l1)  # La deflacionamos
-    v, l, _ = metpotI(defliX, mu, tol, maxrep)  # Buscamos su segundo autovector
+    M = A + mu * np.eye(A.shape[0])  # Calculamos la matriz A shifteada en mu
+    M_inv = calcular_inversa(*calculaLU(M)) # La invertimos
+
+    v1, l1, _ = metpot1(M_inv, tol, maxrep)
+    v, l, _ = metpot2(M_inv, v1, l1)
+    
     l = 1 / l  # Reobtenemos el autovalor correcto
     l -= mu
     return v, l, _
@@ -171,7 +173,7 @@ def laplaciano_iterativo(
         return [nombres_s]
     else:  # Sino:
         L = calcula_L(A)  # Recalculamos el L 
-        v, l, _ = metpotI2(L,1,maxrep=1000)#...  # Encontramos el segundo autovector de L
+        v, l, _ = metpotI2(L,10e-3,maxrep=1000)#...  # Encontramos el segundo autovector de L
         # Recortamos A en dos partes, la que está asociada a el signo positivo de v y la que está asociada al negativo
         s = np.sign(v)
         
