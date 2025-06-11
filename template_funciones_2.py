@@ -175,8 +175,14 @@ def laplaciano_iterativo(
         L = calcula_L(A)  # Recalculamos el L 
         v, l, _ = metpotI2(L,1,maxrep=1000)#...  # Encontramos el segundo autovector de L
         # Recortamos A en dos partes, la que está asociada a el signo positivo de v y la que está asociada al negativo
-        Ap = np.where(v>=0)  # Asociado al signo positivo
-        Am = np.where(v<0)  # Asociado al signo negativo
+        s = np.sign(v)
+        
+        pos_i = [i for i in range(len(s)) if s[i]>= 0]
+        neg_i = [i for i in range(len(s)) if s[i] < 0]
+        print(pos_i)
+        print(s)
+        Ap = A[pos_i][:,pos_i] # Asociado al signo positivo
+        Am = A[neg_i][:,neg_i]   # Asociado al signo negativo
 
         return laplaciano_iterativo(
             Ap, niveles - 1, nombres_s=[ni for ni, vi in zip(nombres_s, v) if vi > 0]
