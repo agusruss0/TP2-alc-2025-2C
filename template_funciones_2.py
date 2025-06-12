@@ -32,18 +32,21 @@ def calcula_L(A: np.ndarray) -> np.ndarray:
     L = K - A  # Calculamos el Laplaciano
     return L
 
+
 def calcula_R(A: np.ndarray) -> np.ndarray:
     # La funcion recibe la matriz de adyacencia A y calcula la matriz de modularidad
     # Have fun!!
     # Calculamos el Laplaciano
-    K = calcula_L(A) + A 
-    suma_total = np.sum(A) # suma_total = 2*E
+    K = calcula_L(A) + A
+    suma_total = np.sum(A)  # suma_total = 2*E
     rows, cols = A.shape
-    P= np.zeros((rows, cols))  # Construyo una matriz de 0s con las dimensiones de A    
+    P = np.zeros((rows, cols))  # Construyo una matriz de 0s con las dimensiones de A
     for i in range(rows):
         for j in range(cols):
             if i != j:
-                P[i, j] = (K[i, i] * K[j, j]) / suma_total  # Probabilidad de que exista una arista entre i y j
+                P[i, j] = (
+                    K[i, i] * K[j, j]
+                ) / suma_total  # Probabilidad de que exista una arista entre i y j
     R = A - P  # Calculamos la matriz de modularidad
     return R
 
@@ -60,13 +63,14 @@ def calcula_Q(R: np.ndarray, v: np.ndarray) -> np.ndarray:
     # La funcion recibe R y s y retorna la modularidad (a menos de un factor 2E)
     s = np.sign(v)
     Q = s.T @ R @ s
-    #suma_total = (1 / (4 * E))
+    # suma_total = (1 / (4 * E))
     return Q
+
 
 def calcula_2E(A: np.ndarray) -> float:
     return np.sum(A)
-    
-    
+
+
 def metpot1(
     A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf, plot: bool = False
 ) -> tuple[np.ndarray, float, bool]:
@@ -110,53 +114,59 @@ def metpot1(
     return avec1, aval1, nrep < maxrep
 
 
-def deflaciona(A: np.ndarray, avec: np.ndarray, aval: float) -> np.ndarray:
+def deflaciona(A: np.ndarray) -> np.ndarray:
     # Recibe la matriz A, el autovector a remover y su autovalor asociado
-    avec = avec / np.linalg.norm(avec, 2) 
-    deflA = A - aval * np.outer(avec, avec)
+    avec, aval, _ = metpot1(
+        A, 1e-17
+    )  # Calcula el primer autovector y autovalor de mayor modulo
+
+    avec = avec / np.linalg.norm(avec, 2)  # Lo normalizamos
+    deflA = A - aval * np.outer(
+        avec, avec
+    )  # Aplicamos la deflacion de Hotelling y obtenemos A deflacionada
     # Sugerencia, usar la funcion outer de numpy
     return deflA
 
 
 def metpot2(
-    A: np.ndarray, v1: np.ndarray, l1: float, tol: float = 1e-8, maxrep: float = np.inf
+    A: np.ndarray, tol: float = 1e-17, maxrep: float = np.inf
 ) -> tuple[np.ndarray, float, bool]:
     # La funcion aplica el metodo de la potencia para buscar el segundo autovalor de A, suponiendo que sus autovectores son ortogonales
     # v1 y l1 son los primeors autovectores y autovalores de A}
     # Have fun
-    deflA = deflaciona(A, v1, l1)
+    deflA = deflaciona(A)
     return metpot1(deflA, tol, maxrep)
 
 
 def metpotI(
-    A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
+    A: np.ndarray, mu: float, tol: float = 1e-17, maxrep: float = np.inf
 ) -> tuple[np.ndarray, float, bool]:
     # Retorna el primer autovalor de la inversa de A + mu * I, junto a su autovector y si el método convergió.
     row, cols = A.shape
 
     M = A + mu * np.eye(row, cols)
     M_inv = calcular_inversa(*calculaLU(M))
-    
-    return metpot1(M_inv, tol=tol, maxrep=maxrep)
+
+    return metpot1(M_inv, tol, maxrep)
+
 
 def metpotI2(
-    A: np.ndarray, mu: float, tol: float = 1e-8, maxrep: float = np.inf
+    A: np.ndarray, mu: float, tol: float = 1e-17, maxrep: float = np.inf
 ) -> tuple[np.ndarray, float, bool]:
     # Recibe la matriz A, y un valor mu y retorna el segundo autovalor y autovector de la matriz A,
     # suponiendo que sus autovalores son positivos excepto por el menor que es igual a 0
     # Retorna el segundo autovector, su autovalor, y si el metodo llegó a converger.
     M = A + mu * np.eye(A.shape[0])  # Calculamos la matriz A shifteada en mu
-    M_inv = calcular_inversa(*calculaLU(M)) # La invertimos
+    M_inv = calcular_inversa(*calculaLU(M))  # La invertimos
 
-    v1, l1, _ = metpot1(M_inv, tol, maxrep)
-    v, l, _ = metpot2(M_inv, v1, l1)
-    
+    v, l, _ = metpot2(M_inv, tol, maxrep)
+
     l = 1 / l  # Reobtenemos el autovalor correcto
     l -= mu
     return v, l, _
 
 
-#TODO: consultar.
+# TODO: consultar.
 def laplaciano_iterativo(
     A: np.ndarray, niveles: int, nombres_s: list[str] = None
 ) -> list[list[str]]:
@@ -172,16 +182,16 @@ def laplaciano_iterativo(
     ):  # Si llegamos al último paso, retornamos los nombres en una lista
         return [nombres_s]
     else:  # Sino:
-        L = calcula_L(A)  # Recalculamos el L 
-        v, l, _ = metpotI2(L,10e-3,maxrep=1000)#...  # Encontramos el segundo autovector de L
+        L = calcula_L(A)  # Recalculamos el L
+        v, l, _ = metpotI2(L, 10e-5)  # ...  # Encontramos el segundo autovector de L
         # Recortamos A en dos partes, la que está asociada a el signo positivo de v y la que está asociada al negativo
         s = np.sign(v)
-        
-        pos_i = [i for i in range(len(s)) if s[i]>= 0]
+
+        pos_i = [i for i in range(len(s)) if s[i] >= 0]
         neg_i = [i for i in range(len(s)) if s[i] < 0]
-        
-        Ap = A[pos_i][:, pos_i] # Asociado al signo positivo
-        Am = A[neg_i][:, neg_i]   # Asociado al signo negativo
+
+        Ap = A[pos_i][:, pos_i]  # Asociado al signo positivo
+        Am = A[neg_i][:, neg_i]  # Asociado al signo negativo
 
         return laplaciano_iterativo(
             Ap, niveles - 1, nombres_s=[ni for ni, vi in zip(nombres_s, v) if vi > 0]

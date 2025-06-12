@@ -132,10 +132,12 @@ def calcular_inversa(L: np.ndarray, U: np.ndarray) -> np.ndarray:
     n, m = L.shape
     Id = np.eye(n, m)
     Inv = np.zeros((n, m))
+    try:
+        for i in range(n):
+            y = scipy.linalg.solve_triangular(L, Id[:, i], lower=True)
+            x = scipy.linalg.solve_triangular(U, y)
+            Inv[:, i] = x
 
-    for i in range(n):
-        y = scipy.linalg.solve_triangular(L, Id[:, i], lower=True)
-        x = scipy.linalg.solve_triangular(U, y)
-        Inv[:, i] = x
-
-    return Inv
+        return Inv
+    except:
+        print("La matriz no es inversible")
