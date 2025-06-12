@@ -199,7 +199,7 @@ def laplaciano_iterativo(
             Am, niveles - 1, nombres_s=[ni for ni, vi in zip(nombres_s, v) if vi < 0]
         )
 
-
+#TODO: consultar la linea 218. Dudas.
 def modularidad_iterativo(
     A: np.ndarray = None, R: np.ndarray = None, nombres_s: list[str] = None
 ) -> list[list[str]]:
@@ -215,9 +215,9 @@ def modularidad_iterativo(
         nombres_s = range(R.shape[0])
     # Acá empieza lo bueno
     if R.shape[0] == 1:  # Si llegamos al último nivel
-        return ...
+        return [nombres_s]#...
     else:
-        v, l, _ = ...  # Primer autovector y autovalor de R
+        v, l, _ = metpot1(R) #...  # Primer autovector y autovalor de R
         # Modularidad Actual:
         Q0 = np.sum(R[v > 0, :][:, v > 0]) + np.sum(R[v < 0, :][:, v < 0])
         if (
@@ -226,10 +226,12 @@ def modularidad_iterativo(
             return ...
         else:
             ## Hacemos como con L, pero usando directamente R para poder mantener siempre la misma matriz de modularidad
-            Rp = ...  # Parte de R asociada a los valores positivos de v
-            Rm = ...  # Parte asociada a los valores negativos de v
-            vp, lp, _ = ...  # autovector principal de Rp
-            vm, lm, _ = ...  # autovector principal de Rm
+            pos_i = [i for i in range(len(v)) if v[i] >= 0]
+            neg_i = [i for i in range(len(v)) if v[i] < 0]
+            Rp =  R[pos_i][:, pos_i] #...  # Parte de R asociada a los valores positivos de v
+            Rm =  R[neg_i][:, neg_i] #...  # Parte asociada a los valores negativos de v
+            vp, lp, _ = metpot1(Rp)  #...  # autovector principal de Rp
+            vm, lm, _ = metpot1(Rm)  #...  # autovector principal de Rm
 
             # Calculamos el cambio en Q que se produciría al hacer esta partición
             Q1 = 0
@@ -248,7 +250,11 @@ def modularidad_iterativo(
                 ]
             else:
                 # Sino, repetimos para los subniveles
-                return ...
+                sub_negativos = [ni for ni, vi in zip(nombres_s, v) if vi > 0]
+                sub_positivos =[ni for ni, vi in zip(nombres_s, v) if vi < 0]
+                return modularidad_iterativo(
+                    R, Rp, nombres_s=sub_positivos
+                ) + modularidad_iterativo(R, Rm, nombres_s=sub_negativos)
 
 
 def plot_avec_aprox(vecs: np.ndarray) -> None:

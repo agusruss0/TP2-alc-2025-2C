@@ -1,7 +1,10 @@
 import numpy as np
 import scipy
 import scipy.linalg
-
+import networkx as nx
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+import geopandas as gpd
 
 def construye_adyacencia(D: np.ndarray, m: int) -> np.ndarray:
     # Función que construye la matriz de adyacencia del grafo de museos
@@ -141,3 +144,82 @@ def calcular_inversa(L: np.ndarray, U: np.ndarray) -> np.ndarray:
         return Inv
     except:
         print("La matriz no es inversible")
+
+
+# TODO: Pasar a template_funciones.py
+def graficar_red_periferia(
+    p_rank: np.ndarray,
+    G: nx.Graph,
+    G_layout: dict,
+    Nprincipales: int,
+    ax: Axes,
+    nodos_destacados: list[int],
+    nodos_internos: list[int],
+) -> (
+    np.ndarray
+):  # Graficamos la red con el Page Rank  #TODO: Pasar a template_funciones.py
+    """
+    Grafica los nodos de la red en el mapa.
+
+    Args:
+        p_rank (np.ndarray): Vector de PageRank.
+        G (nx.Graph): Grafo de la red.
+        G_layout (dict): Layout del grafo.
+        Nprincipales (int): Número de nodos principales a graficar.
+        ax (Axes): Axes del gráfico.
+        nodos_destacados (list[int]): Lista de nodos destacados.
+        nodos_internos (list[int]): Lista de nodos internos.
+    """
+    factor_escala = 1e4  # Escalamos los nodos 10 mil veces para que sean bien visibles
+    pr = p_rank  # np.random.uniform(0,1,museos.shape[0])# Este va a ser su score Page Rank. Ahora lo reemplazamos con un vector al azar
+    pr = pr / pr.sum()  # Normalizamos para que sume 1
+    principales = np.argsort(pr)[-Nprincipales:]  # Identificamos a los N principales
+    colores_nodos = []
+    for n in G.nodes:
+        if n in nodos_destacados:
+            colores_nodos.append("red")
+        elif n in nodos_internos:
+            colores_nodos.append("green")
+        else:
+            colores_nodos.append("#8fbcd4")
+    # colores_nodos = ['red' if n in nodos_destacados else '#8fbcd4' for n in G.nodes]
+    labels = {
+        n: str(n) if i in principales else "" for i, n in enumerate(G.nodes)
+    }  # Nombres para esos nodos
+    nx.draw_networkx(
+        G,
+        G_layout,
+        node_size=pr * factor_escala * 1.40,
+        ax=ax,
+        with_labels=False,
+        node_color=colores_nodos,
+    )  # Graficamos red
+    #nx.draw_networkx_labels(
+    #    G, G_layout, labels=labels, ax=ax, font_size=0, font_color="k"
+    #)  # Agregamos los nombres
+    return principales
+
+
+def graficar_nodos(
+    v: np.ndarray, G: nx.Graph, G_layout: dict, barrios: gpd.GeoDataFrame
+) -> None:  # Graficamos la red con el Page Rank  #TODO: Pasar a template_funciones.py
+    """
+    Grafica los nodos de la red en el mapa.
+
+    Args:
+        v (np.ndarray): Vector de PageRank.
+        G (nx.Graph): Grafo de la red.
+        G_layout (dict): Layout del grafo.
+        barrios (gpd.GeoDataFrame): DataFrame con los barrios.
+    """
+    factor_escala = 1e4  # Escalamos los nodos 10 mil veces para que sean bien visibles
+    fig, ax = plt.subplots(figsize=(10, 10))  # Visualización de la red en el mapa
+    barrios.to_crs("EPSG:22184").boundary.plot(
+        color="gray", ax=ax
+    )  # Graficamos Los barrios
+    pr = v  # np.random.uniform(0,1,museos.shape[0])# Este va a ser su score Page Rank. Ahora lo reemplazamos con un vector al azar
+    pr = pr / pr.sum()  # Normalizamos para que sume 1    # Alto
+    plt.title("Cantidad de visitas iniciales por museo")
+    nx.draw_networkx_nodes(
+        G, G_layout, node_size=pr * factor_escala, ax=ax
+    )  # Graficamos red
