@@ -219,14 +219,14 @@ def modularidad_iterativo(
     else:
         v, l, _ = metpot1(R) #...  # Primer autovector y autovalor de R
         # Modularidad Actual:
-        Q0 = np.sum(R[v > 0, :][:, v > 0]) + np.sum(R[v < 0, :][:, v < 0])
+        Q0 = np.sum(R[v > 0, :][:, v > 0]) + np.sum(R[v < 0, :][:, v < 0]) #
         if (
             Q0 <= 0 or all(v > 0) or all(v < 0)
         ):  # Si la modularidad actual es menor a cero, o no se propone una partición, terminamos
-            return ...
+            return [nombres_s]
         else:
             ## Hacemos como con L, pero usando directamente R para poder mantener siempre la misma matriz de modularidad
-            pos_i = [i for i in range(len(v)) if v[i] >= 0]
+            pos_i = [i for i in range(len(v)) if v[i] >= 0] 
             neg_i = [i for i in range(len(v)) if v[i] < 0]
             Rp =  R[pos_i][:, pos_i] #...  # Parte de R asociada a los valores positivos de v
             Rm =  R[neg_i][:, neg_i] #...  # Parte asociada a los valores negativos de v
