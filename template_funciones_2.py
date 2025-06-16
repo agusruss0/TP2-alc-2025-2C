@@ -156,12 +156,13 @@ def metpotI2(
     # Recibe la matriz A, y un valor mu y retorna el segundo autovalor y autovector de la matriz A,
     # suponiendo que sus autovalores son positivos excepto por el menor que es igual a 0
     # Retorna el segundo autovector, su autovalor, y si el metodo llegó a converger.
+    
     M = A + mu * np.eye(A.shape[0])  # Calculamos la matriz A shifteada en mu
     M_inv = calcular_inversa(*calculaLU(M))  # La invertimos
 
     v, l, _ = metpot2(M_inv, tol, maxrep)
 
-    l = 1 / l  # Reobtenemos el autovalor correcto
+    # l = 1 / l  # Reobtenemos el autovalor correcto
     l -= mu
     return v, l, _
 
@@ -183,7 +184,7 @@ def laplaciano_iterativo(
         return [nombres_s]
     else:  # Sino:
         L = calcula_L(A)  # Recalculamos el L
-        v, l, _ = metpotI2(L, 10e-5)  # ...  # Encontramos el segundo autovector de L
+        v, l, _ = metpotI2(L, 10e-4)  # ...  # Encontramos el segundo autovector de autovalor mas chico de L
         # Recortamos A en dos partes, la que está asociada a el signo positivo de v y la que está asociada al negativo
         s = np.sign(v)
 
@@ -193,10 +194,13 @@ def laplaciano_iterativo(
         Ap = A[pos_i][:, pos_i]  # Asociado al signo positivo
         Am = A[neg_i][:, neg_i]  # Asociado al signo negativo
 
+        nombres_pos = [nombres_s[i] for i in pos_i]
+        nombres_neg = [nombres_s[i] for i in neg_i]
+
         return laplaciano_iterativo(
-            Ap, niveles - 1, nombres_s=[ni for ni, vi in zip(nombres_s, v) if vi > 0]
+            Ap, niveles - 1, nombres_s=nombres_pos
         ) + laplaciano_iterativo(
-            Am, niveles - 1, nombres_s=[ni for ni, vi in zip(nombres_s, v) if vi < 0]
+            Am, niveles - 1, nombres_s=nombres_neg
         )
 
 #TODO: consultar la linea 218. Dudas.
@@ -233,6 +237,8 @@ def modularidad_iterativo(
             vp, lp, _ = metpot1(Rp)  #...  # autovector principal de Rp
             vm, lm, _ = metpot1(Rm)  #...  # autovector principal de Rm
 
+            nombres_pos = [nombres_s[i] for i in pos_i]
+            nombres_neg = [nombres_s[i] for i in neg_i]
             # Calculamos el cambio en Q que se produciría al hacer esta partición
             Q1 = 0
             if not all(vp > 0) or all(vp < 0):
@@ -245,16 +251,14 @@ def modularidad_iterativo(
                 Q0 >= Q1
             ):  # Si al partir obtuvimos un Q menor, devolvemos la última partición que hicimos
                 return [
-                    [ni for ni, vi in zip(nombres_s, v) if vi > 0],
-                    [ni for ni, vi in zip(nombres_s, v) if vi < 0],
+                    nombres_pos,
+                    nombres_neg,
                 ]
             else:
-                # Sino, repetimos para los subniveles
-                sub_negativos = [ni for ni, vi in zip(nombres_s, v) if vi > 0]
-                sub_positivos =[ni for ni, vi in zip(nombres_s, v) if vi < 0]
+      
                 return modularidad_iterativo(
-                    R, Rp, nombres_s=sub_positivos
-                ) + modularidad_iterativo(R, Rm, nombres_s=sub_negativos)
+                    R, Rp, nombres_s=nombres_pos
+                ) + modularidad_iterativo(R, Rm, nombres_s=nombres_neg)
 
 
 def plot_avec_aprox(vecs: np.ndarray) -> None:
@@ -277,7 +281,7 @@ def plot_avec_aprox(vecs: np.ndarray) -> None:
     ax = fig.add_subplot(111, projection="3d")
     ax.plot(vecs[:, 0], vecs[:, 1], vecs[:, 2], marker="o", linewidth=1)
 
-    ax.scatter(*vecs[-1], c="red", s=60, label="Autovector convergido")
+    ax.scatter(vecs[-1][0], vecs[-1][1], vecs[-1][2], c="red", s=60, label="Autovector convergido")
 
     ax.set_xlabel("x")
     ax.set_ylabel("y")
