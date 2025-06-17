@@ -162,12 +162,11 @@ def metpotI2(
 
     v, l, _ = metpot2(M_inv, tol, maxrep)
 
-    # l = 1 / l  # Reobtenemos el autovalor correcto
+    l = 1 / l  # Reobtenemos el autovalor correcto
     l -= mu
     return v, l, _
 
 
-# TODO: consultar.
 def laplaciano_iterativo(
     A: np.ndarray, niveles: int, nombres_s: list[str] = None
 ) -> list[list[str]]:
@@ -203,7 +202,6 @@ def laplaciano_iterativo(
             Am, niveles - 1, nombres_s=nombres_neg
         )
 
-#TODO: consultar la linea 218. Dudas.
 def modularidad_iterativo(
     A: np.ndarray = None, R: np.ndarray = None, nombres_s: list[str] = None
 ) -> list[list[str]]:
