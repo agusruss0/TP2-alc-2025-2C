@@ -223,3 +223,11 @@ def graficar_nodos(
     nx.draw_networkx_nodes(
         G, G_layout, node_size=pr * factor_escala, ax=ax
     )  # Graficamos red
+
+def resolver_sistema(A: np.ndarray, b: np.ndarray) -> np.ndarray:
+    L, U = calculaLU(A)
+
+    x = scipy.linalg.solve_triangular(L, b, lower=True)
+    v = scipy.linalg.solve_triangular(U, x)
+
+    return v
