@@ -1,9 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # sólo para activar el proyector 3D
+import warnings
 
 from template_funciones import calcular_inversa, calculaLU
 
+
+warnings.filterwarnings("ignore")
 # Matriz A de ejemplo
 # A_ejemplo = np.array([
 #    [0, 1, 1, 1, 0, 0, 0, 0],

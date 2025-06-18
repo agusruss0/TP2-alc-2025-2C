@@ -5,6 +5,9 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 import geopandas as gpd
+import warnings
+
+warnings.filterwarnings("ignore")
 
 def construye_adyacencia(D: np.ndarray, m: int) -> np.ndarray:
     # Función que construye la matriz de adyacencia del grafo de museos
@@ -105,7 +108,7 @@ def calcula_matriz_C_continua(D: np.ndarray) -> np.ndarray:
         sumatoria = np.sum(F[i])
         for k in range(F.shape[1]):
             # Multiplicamos por la distancia inversa
-            C[i, k] = (1 / sumatoria) * F[i, k]
+            C[k,i] = (1 / sumatoria) * F[i, k]
 
     return C
 
@@ -145,6 +148,50 @@ def calcular_inversa(L: np.ndarray, U: np.ndarray) -> np.ndarray:
     except:
         print("La matriz no es inversible")
 
+def graficar_red(
+    p_rank: np.ndarray,
+    G: nx.Graph,
+    G_layout: dict,
+    Nprincipales: int,
+    ax: Axes,
+    color: bool = True,
+) -> np.ndarray:
+    """
+    Grafica la red con el Page Rank.
+
+    Args:
+        p_rank (np.ndarray): Vector de PageRank.
+        G (nx.Graph): Grafo de la red.
+        G_layout (dict): Layout del grafo.
+        Nprincipales (int): Número de nodos principales a graficar.
+        ax (Axes): Axes del gráfico.
+        color (bool): Si True, colorea los nodos principales de rojo.
+    """
+    factor_escala = 1e4  # Escalamos los nodos 10 mil veces para que sean bien visibles
+    pr = p_rank  # np.random.uniform(0,1,museos.shape[0])# Este va a ser su score Page Rank. Ahora lo reemplazamos con un vector al azar
+    pr = pr / pr.sum()  # Normalizamos para que sume 1
+    principales = np.argsort(pr)[-Nprincipales:]  # Identificamos a los N principales
+    colores = ["orange" if n in principales else "#8fbcd4" for n in G.nodes]
+    labels = {
+        n: str(n) if i in principales else "" for i, n in enumerate(G.nodes)
+    }  # Nombres para esos nodos
+    if color:
+        nx.draw_networkx(
+            G,
+            G_layout,
+            node_size=pr * factor_escala,
+            ax=ax,
+            with_labels=False,
+            node_color=colores,
+        )  # Graficamos red
+    else:
+        nx.draw_networkx(
+            G, G_layout, node_size=pr * factor_escala, ax=ax, with_labels=False
+        )  # Graficamos red
+    nx.draw_networkx_labels(
+        G, G_layout, labels=labels, ax=ax, font_size=8, font_color="k"
+    )  # Agregamos los nombres
+    return principales
 
 # TODO: Pasar a template_funciones.py
 def graficar_red_periferia(
