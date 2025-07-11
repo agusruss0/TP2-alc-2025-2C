@@ -278,3 +278,7 @@ def resolver_sistema(A: np.ndarray, b: np.ndarray) -> np.ndarray:
     v = scipy.linalg.solve_triangular(U, x)
 
     return v
+
+def norma_1(v: np.ndarray) -> float:
+    v_abs = np.abs(v)
+    return np.sum(v_abs)
