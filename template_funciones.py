@@ -1,13 +1,15 @@
+import warnings
+
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import networkx as nx
 import numpy as np
 import scipy
 import scipy.linalg
-import networkx as nx
-import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-import geopandas as gpd
-import warnings
 
 warnings.filterwarnings("ignore")
+
 
 def construye_adyacencia(D: np.ndarray, m: int) -> np.ndarray:
     # Función que construye la matriz de adyacencia del grafo de museos
@@ -108,7 +110,7 @@ def calcula_matriz_C_continua(D: np.ndarray) -> np.ndarray:
         sumatoria = np.sum(F[i])
         for k in range(F.shape[1]):
             # Multiplicamos por la distancia inversa
-            C[k,i] = (1 / sumatoria) * F[i, k]
+            C[k, i] = (1 / sumatoria) * F[i, k]
 
     return C
 
@@ -147,6 +149,7 @@ def calcular_inversa(L: np.ndarray, U: np.ndarray) -> np.ndarray:
         return Inv
     except:
         print("La matriz no es inversible")
+
 
 def graficar_red(
     p_rank: np.ndarray,
@@ -192,6 +195,7 @@ def graficar_red(
         G, G_layout, labels=labels, ax=ax, font_size=8, font_color="k"
     )  # Agregamos los nombres
     return principales
+
 
 # TODO: Pasar a template_funciones.py
 def graficar_red_periferia(
@@ -241,9 +245,9 @@ def graficar_red_periferia(
         with_labels=False,
         node_color=colores_nodos,
     )  # Graficamos red
-    #nx.draw_networkx_labels(
+    # nx.draw_networkx_labels(
     #    G, G_layout, labels=labels, ax=ax, font_size=0, font_color="k"
-    #)  # Agregamos los nombres
+    # )  # Agregamos los nombres
     return principales
 
 
@@ -271,6 +275,7 @@ def graficar_nodos(
         G, G_layout, node_size=pr * factor_escala, ax=ax
     )  # Graficamos red
 
+
 def resolver_sistema(A: np.ndarray, b: np.ndarray) -> np.ndarray:
     L, U = calculaLU(A)
 
@@ -278,6 +283,7 @@ def resolver_sistema(A: np.ndarray, b: np.ndarray) -> np.ndarray:
     v = scipy.linalg.solve_triangular(U, x)
 
     return v
+
 
 def norma_1(v: np.ndarray) -> float:
     v_abs = np.abs(v)

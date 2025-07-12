@@ -1,10 +1,10 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # sólo para activar el proyector 3D
 import warnings
 
-from template_funciones import calcular_inversa, calculaLU
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D  # sólo para activar el proyector 3D
 
+from template_funciones import calculaLU, calcular_inversa
 
 warnings.filterwarnings("ignore")
 # Matriz A de ejemplo
@@ -75,7 +75,11 @@ def calcula_2E(A: np.ndarray) -> float:
 
 
 def metpot1(
-    A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf, plot: bool = False, seed: int = 23
+    A: np.ndarray,
+    tol: float = 1e-8,
+    maxrep: float = np.inf,
+    plot: bool = False,
+    seed: int = 100,
 ) -> tuple[np.ndarray, float, bool]:
     # Recibe una matriz A y calcula su autovalor de mayor módulo, con un error relativo menor a tol y-o haciendo como mucho maxrep repeticiones
     avec_aprox = []
@@ -118,10 +122,10 @@ def metpot1(
     return avec1, aval1, nrep < maxrep
 
 
-def deflaciona(A: np.ndarray) -> np.ndarray:
+def deflaciona(A: np.ndarray, seed: int = 23) -> np.ndarray:
     # Recibe la matriz A, el autovector a remover y su autovalor asociado
     avec, aval, _ = metpot1(
-        A, 1e-17
+        A, 1e-17, seed=seed
     )  # Calcula el primer autovector y autovalor de mayor modulo
 
     avec = avec / np.linalg.norm(avec, 2)  # Lo normalizamos
@@ -133,17 +137,17 @@ def deflaciona(A: np.ndarray) -> np.ndarray:
 
 
 def metpot2(
-    A: np.ndarray, tol: float = 1e-17, maxrep: float = np.inf
+    A: np.ndarray, tol: float = 1e-17, maxrep: float = np.inf, seed: int = 23
 ) -> tuple[np.ndarray, float, bool]:
     # La funcion aplica el metodo de la potencia para buscar el segundo autovalor de A, suponiendo que sus autovectores son ortogonales
     # v1 y l1 son los primeors autovectores y autovalores de A}
     # Have fun
-    deflA = deflaciona(A)
-    return metpot1(deflA, tol, maxrep)
+    deflA = deflaciona(A, seed)
+    return metpot1(deflA, tol, maxrep, seed=seed)
 
 
 def metpotI(
-    A: np.ndarray, mu: float, tol: float = 1e-17, maxrep: float = np.inf
+    A: np.ndarray, mu: float, tol: float = 1e-17, maxrep: float = np.inf, seed: int = 23
 ) -> tuple[np.ndarray, float, bool]:
     # Retorna el primer autovalor de la inversa de A + mu * I, junto a su autovector y si el método convergió.
     row, cols = A.shape
@@ -151,20 +155,20 @@ def metpotI(
     M = A + mu * np.eye(row, cols)
     M_inv = calcular_inversa(*calculaLU(M))
 
-    return metpot1(M_inv, tol, maxrep)
+    return metpot1(M_inv, tol, maxrep, seed=seed)
 
 
 def metpotI2(
-    A: np.ndarray, mu: float, tol: float = 1e-17, maxrep: float = np.inf
+    A: np.ndarray, mu: float, tol: float = 1e-17, maxrep: float = np.inf, seed: int = 23
 ) -> tuple[np.ndarray, float, bool]:
     # Recibe la matriz A, y un valor mu y retorna el segundo autovalor y autovector de la matriz A,
     # suponiendo que sus autovalores son positivos excepto por el menor que es igual a 0
     # Retorna el segundo autovector, su autovalor, y si el metodo llegó a converger.
-    
+
     M = A + mu * np.eye(A.shape[0])  # Calculamos la matriz A shifteada en mu
     M_inv = calcular_inversa(*calculaLU(M))  # La invertimos
 
-    v, l, _ = metpot2(M_inv, tol, maxrep)
+    v, l, _ = metpot2(M_inv, tol, maxrep, seed=seed)
 
     l = 1 / l  # Reobtenemos el autovalor correcto
     l -= mu
@@ -172,7 +176,7 @@ def metpotI2(
 
 
 def laplaciano_iterativo(
-    A: np.ndarray, niveles: int, nombres_s: list[str] = None
+    A: np.ndarray, niveles: int, nombres_s: list[str] = None, seed: int = 23
 ) -> list[list[str]]:
     # Recibe una matriz A, una cantidad de niveles sobre los que hacer cortes, y los nombres de los nodos
     # Retorna una lista con conjuntos de nodos representando las comunidades.
@@ -187,7 +191,9 @@ def laplaciano_iterativo(
         return [nombres_s]
     else:  # Sino:
         L = calcula_L(A)  # Recalculamos el L
-        v, l, _ = metpotI2(L, 10e-4)  # ...  # Encontramos el segundo autovector de autovalor mas chico de L
+        v, l, _ = metpotI2(
+            L, 10e-4, seed=seed
+        )  # ...  # Encontramos el segundo autovector de autovalor mas chico de L
         # Recortamos A en dos partes, la que está asociada a el signo positivo de v y la que está asociada al negativo
         s = np.sign(v)
 
@@ -201,13 +207,15 @@ def laplaciano_iterativo(
         nombres_neg = [nombres_s[i] for i in neg_i]
 
         return laplaciano_iterativo(
-            Ap, niveles - 1, nombres_s=nombres_pos
-        ) + laplaciano_iterativo(
-            Am, niveles - 1, nombres_s=nombres_neg
-        )
+            Ap, niveles - 1, nombres_s=nombres_pos, seed=seed
+        ) + laplaciano_iterativo(Am, niveles - 1, nombres_s=nombres_neg, seed=seed)
+
 
 def modularidad_iterativo(
-    A: np.ndarray = None, R: np.ndarray = None, nombres_s: list[str] = None
+    A: np.ndarray = None,
+    R: np.ndarray = None,
+    nombres_s: list[str] = None,
+    seed: int = 23,
 ) -> list[list[str]]:
     # Recibe una matriz A, una matriz R de modularidad, y los nombres de los nodos
     # Retorna una lista con conjuntos de nodos representando las comunidades.
@@ -221,23 +229,27 @@ def modularidad_iterativo(
         nombres_s = range(R.shape[0])
     # Acá empieza lo bueno
     if R.shape[0] == 1:  # Si llegamos al último nivel
-        return [nombres_s]#...
+        return [nombres_s]  # ...
     else:
-        v, l, _ = metpot1(R) #...  # Primer autovector y autovalor de R
+        v, l, _ = metpot1(R, seed=seed)  # ...  # Primer autovector y autovalor de R
         # Modularidad Actual:
-        Q0 = np.sum(R[v > 0, :][:, v > 0]) + np.sum(R[v < 0, :][:, v < 0]) #
+        Q0 = np.sum(R[v > 0, :][:, v > 0]) + np.sum(R[v < 0, :][:, v < 0])  #
         if (
             Q0 <= 0 or all(v > 0) or all(v < 0)
         ):  # Si la modularidad actual es menor a cero, o no se propone una partición, terminamos
             return [nombres_s]
         else:
             ## Hacemos como con L, pero usando directamente R para poder mantener siempre la misma matriz de modularidad
-            pos_i = [i for i in range(len(v)) if v[i] >= 0] 
+            pos_i = [i for i in range(len(v)) if v[i] >= 0]
             neg_i = [i for i in range(len(v)) if v[i] < 0]
-            Rp =  R[pos_i][:, pos_i] #...  # Parte de R asociada a los valores positivos de v
-            Rm =  R[neg_i][:, neg_i] #...  # Parte asociada a los valores negativos de v
-            vp, lp, _ = metpot1(Rp)  #...  # autovector principal de Rp
-            vm, lm, _ = metpot1(Rm)  #...  # autovector principal de Rm
+            Rp = R[pos_i][
+                :, pos_i
+            ]  # ...  # Parte de R asociada a los valores positivos de v
+            Rm = R[neg_i][
+                :, neg_i
+            ]  # ...  # Parte asociada a los valores negativos de v
+            vp, lp, _ = metpot1(Rp, seed=seed)  # ...  # autovector principal de Rp
+            vm, lm, _ = metpot1(Rm, seed=seed)  # ...  # autovector principal de Rm
 
             nombres_pos = [nombres_s[i] for i in pos_i]
             nombres_neg = [nombres_s[i] for i in neg_i]
@@ -257,38 +269,10 @@ def modularidad_iterativo(
                     nombres_neg,
                 ]
             else:
-      
                 return modularidad_iterativo(
-                    R, Rp, nombres_s=nombres_pos
-                ) + modularidad_iterativo(R, Rm, nombres_s=nombres_neg)
+                    R, Rp, nombres_s=nombres_pos, seed=seed
+                ) + modularidad_iterativo(R, Rm, nombres_s=nombres_neg, seed=seed)
 
-
-""" def plot_avec_aprox(vecs: np.ndarray) -> None:
-    fig,ax = plt.subplots(1,2, figsize=(8, 4),subplot_kw=dict(projection='3d'))
-    #plt.figure(figsize=(8, 4))
-    ax[0].plot(np.arange(len(vecs)), vecs[:, 0], label="Componente x")
-    ax[0].plot(np.arange(len(vecs)), vecs[:, 1], label="Componente y")
-    ax[0].plot(np.arange(len(vecs)), vecs[:, 2], label="Componente z")
-
-    ax[0].set_xlabel("Iteración")
-    ax[0].set_ylabel("Valor de la componente")
-    ax[0].set_title("Convergencia de cada componente del autovector")
-    ax[0].grid(True)
-    ax[0].legend()
-    #ax[0].tight_layout()
-    #plt.show()
-
-    #fig = fig.add_subplot(111, projection="3d")
-    ax[1].plot(vecs[:, 0], vecs[:, 1], vecs[:, 2], marker="o", linewidth=1)
-    ax[1].scatter(vecs[-1][0], vecs[-1][1], vecs[-1][2], c="red", s=60, label="Autovector convergido")
-    ax[1].set_xlabel("x")
-    ax[1].set_ylabel("y")
-    ax[1].set_zlabel("z")
-    ax[1].set_title("Trayectoria de las aproximaciones en R³")
-    ax[1].legend()
-    plt.tight_layout()
-    plt.show()
- """
 
 def plot_avec_aprox(vecs: np.ndarray) -> None:
     fig = plt.figure(figsize=(12, 6))
@@ -308,7 +292,14 @@ def plot_avec_aprox(vecs: np.ndarray) -> None:
     # Subplot 2: Trayectoria en 3D
     ax2 = fig.add_subplot(1, 2, 2, projection="3d")
     ax2.plot(vecs[:, 0], vecs[:, 1], vecs[:, 2], marker="o", linewidth=1)
-    ax2.scatter(vecs[-1][0], vecs[-1][1], vecs[-1][2], c="red", s=60, label="Autovector convergido")
+    ax2.scatter(
+        vecs[-1][0],
+        vecs[-1][1],
+        vecs[-1][2],
+        c="red",
+        s=60,
+        label="Autovector convergido",
+    )
 
     ax2.set_xlabel("x")
     ax2.set_ylabel("y")
