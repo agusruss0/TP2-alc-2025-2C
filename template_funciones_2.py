@@ -75,12 +75,13 @@ def calcula_2E(A: np.ndarray) -> float:
 
 
 def metpot1(
-    A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf, plot: bool = False
+    A: np.ndarray, tol: float = 1e-8, maxrep: float = np.inf, plot: bool = False, seed: int = 23
 ) -> tuple[np.ndarray, float, bool]:
     # Recibe una matriz A y calcula su autovalor de mayor módulo, con un error relativo menor a tol y-o haciendo como mucho maxrep repeticiones
     avec_aprox = []
     rows, cols = A.shape
 
+    np.random.seed(seed)  # Fijamos la semilla para reproducibilidad
     vec = np.random.uniform(
         -1, 1, size=cols
     )  # Generamos un vector de partida aleatorio, entre -1 y 1
@@ -262,32 +263,58 @@ def modularidad_iterativo(
                 ) + modularidad_iterativo(R, Rm, nombres_s=nombres_neg)
 
 
-def plot_avec_aprox(vecs: np.ndarray) -> None:
-    plt.figure(figsize=(8, 4))
-    plt.plot(np.arange(len(vecs)), vecs[:, 0], label="Componente x")
+""" def plot_avec_aprox(vecs: np.ndarray) -> None:
+    fig,ax = plt.subplots(1,2, figsize=(8, 4),subplot_kw=dict(projection='3d'))
+    #plt.figure(figsize=(8, 4))
+    ax[0].plot(np.arange(len(vecs)), vecs[:, 0], label="Componente x")
+    ax[0].plot(np.arange(len(vecs)), vecs[:, 1], label="Componente y")
+    ax[0].plot(np.arange(len(vecs)), vecs[:, 2], label="Componente z")
 
-    plt.plot(np.arange(len(vecs)), vecs[:, 1], label="Componente y")
+    ax[0].set_xlabel("Iteración")
+    ax[0].set_ylabel("Valor de la componente")
+    ax[0].set_title("Convergencia de cada componente del autovector")
+    ax[0].grid(True)
+    ax[0].legend()
+    #ax[0].tight_layout()
+    #plt.show()
 
-    plt.plot(np.arange(len(vecs)), vecs[:, 2], label="Componente z")
-
-    plt.xlabel("Iteración")
-    plt.ylabel("Valor de la componente")
-    plt.title("Convergencia de cada componente del autovector")
-    plt.grid(True)
-    plt.legend()
+    #fig = fig.add_subplot(111, projection="3d")
+    ax[1].plot(vecs[:, 0], vecs[:, 1], vecs[:, 2], marker="o", linewidth=1)
+    ax[1].scatter(vecs[-1][0], vecs[-1][1], vecs[-1][2], c="red", s=60, label="Autovector convergido")
+    ax[1].set_xlabel("x")
+    ax[1].set_ylabel("y")
+    ax[1].set_zlabel("z")
+    ax[1].set_title("Trayectoria de las aproximaciones en R³")
+    ax[1].legend()
     plt.tight_layout()
     plt.show()
+ """
 
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, projection="3d")
-    ax.plot(vecs[:, 0], vecs[:, 1], vecs[:, 2], marker="o", linewidth=1)
+def plot_avec_aprox(vecs: np.ndarray) -> None:
+    fig = plt.figure(figsize=(12, 6))
 
-    ax.scatter(vecs[-1][0], vecs[-1][1], vecs[-1][2], c="red", s=60, label="Autovector convergido")
+    # Subplot 1: Convergencia de componentes
+    ax1 = fig.add_subplot(1, 2, 1)
+    ax1.plot(np.arange(len(vecs)), vecs[:, 0], label="Componente x")
+    ax1.plot(np.arange(len(vecs)), vecs[:, 1], label="Componente y")
+    ax1.plot(np.arange(len(vecs)), vecs[:, 2], label="Componente z")
 
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-    ax.set_title("Trayectoria de las aproximaciones en R³")
-    ax.legend()
+    ax1.set_xlabel("Iteración")
+    ax1.set_ylabel("Valor de la componente")
+    ax1.set_title("Convergencia de cada componente")
+    ax1.grid(True)
+    ax1.legend()
+
+    # Subplot 2: Trayectoria en 3D
+    ax2 = fig.add_subplot(1, 2, 2, projection="3d")
+    ax2.plot(vecs[:, 0], vecs[:, 1], vecs[:, 2], marker="o", linewidth=1)
+    ax2.scatter(vecs[-1][0], vecs[-1][1], vecs[-1][2], c="red", s=60, label="Autovector convergido")
+
+    ax2.set_xlabel("x")
+    ax2.set_ylabel("y")
+    ax2.set_zlabel("z")
+    ax2.set_title("Trayectoria en R³")
+    ax2.legend()
+
     plt.tight_layout()
     plt.show()
